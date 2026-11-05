@@ -1,80 +1,606 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#0B57D0">
-<title>CM Filings Admin</title>
-<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;600;700&family=Google+Sans+Text:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/admin.css">
-<script src="https://unpkg.com/lucide@latest"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GSTR-1 Excel to JSON Converter</title>
+    <link rel="stylesheet" href="./style.css">
+ 
 </head>
 <body>
-<a class="skip" href="#main">Skip to content</a>
-<section id="loginScreen" class="login-screen">
-  <div class="login-card">
-    <div class="login-brand"><div class="brand-mark">CM</div><div><strong>CM Filings Admin</strong><small>Tax · Compliance · Advisory</small></div></div>
-    <div class="login-art gradient-soft"><i data-lucide="shield-check"></i></div>
-    <p class="kicker">SECURE WORKSPACE</p><h1>Welcome back.</h1><p class="muted">Sign in with an authorized administrator account to manage clients, compliance and Drive documents.</p>
-    <form id="loginForm" class="form">
-      <label class="field"><span>Email address</span><input id="loginEmail" type="email" autocomplete="username" required placeholder="admin@company.com"></label>
-      <label class="field"><span>Password</span><input id="loginPassword" type="password" autocomplete="current-password" required placeholder="Your password"></label>
-      <button class="cta gradient full" type="submit"><i data-lucide="log-in"></i> Sign in</button>
-      <button class="text-button" id="forgotPassword" type="button">Forgot password?</button>
-    </form><div id="loginMessage" class="notice" role="status"></div>
-    <p class="security-note"><i data-lucide="lock-keyhole"></i> Admin access is checked against Firestore <code>admins/{uid}</code>.</p>
-  </div>
-</section>
-<div id="app" class="app" hidden>
-  <aside id="sidebar" class="sidebar">
-    <div class="sidebar-brand"><div class="brand-mark">CM</div><div><strong>CM Filings</strong><small>Admin workspace</small></div><button class="icon-btn sidebar-close mobile-only" id="closeSidebar" aria-label="Close menu"><i data-lucide="x"></i></button></div>
-    <div class="workspace-pill"><span class="online-dot"></span><span>CM Filings Admin</span><span class="pill">PROD</span></div>
-    <nav class="side-nav" aria-label="Main navigation">
-      <button class="side-link active" data-view="overview"><i data-lucide="layout-dashboard"></i><span>Overview</span></button>
-      <button class="side-link" data-view="clients"><i data-lucide="users"></i><span>Clients</span><span class="nav-count" id="clientNavCount">0</span></button>
-      <button class="side-link" data-view="compliance"><i data-lucide="calendar-check"></i><span>Compliance</span><span class="nav-count" id="complianceNavCount">0</span></button>
-      <button class="side-link" data-view="documents"><i data-lucide="folder-open"></i><span>Drive documents</span></button>
-      <button class="side-link" data-view="credentials"><i data-lucide="key-round"></i><span>Credentials</span><span class="admin-only-tag">ADMIN</span></button>
-      <button class="side-link" data-view="sync"><i data-lucide="refresh-cw"></i><span>Sync status</span></button>
-    </nav>
-    <div class="sidebar-bottom"><div class="sidebar-tip"><i data-lucide="shield-check"></i><div><strong>Security first</strong><p>Client files remain in private Google Drive folders.</p></div></div><button class="side-link" id="signOut"><i data-lucide="log-out"></i><span>Sign out</span></button></div>
-  </aside>
-  <div id="sidebarOverlay" class="sidebar-overlay"></div>
-  <div class="workspace">
-    <header class="site-header"><div class="header-inner container">
-      <div class="header-left"><button class="icon-btn mobile-only" id="openSidebar" aria-label="Open menu"><i data-lucide="menu"></i></button><div class="breadcrumbs"><span>CM Filings</span><i data-lucide="chevron-right"></i><strong id="breadcrumbCurrent">Overview</strong></div></div>
-      <div class="header-actions"><button class="icon-btn" id="refreshBtn" title="Refresh data" aria-label="Refresh data"><i data-lucide="refresh-cw"></i></button><div class="profile-chip"><div class="avatar" id="profileAvatar">A</div><div class="profile-meta"><strong id="profileName">Administrator</strong><small id="profileEmail">Signed in</small></div></div></div>
-    </div></header>
-    <main id="main" class="main-content container">
-      <div class="page-heading"><div><p class="kicker" id="pageKicker">ADMINISTRATION</p><h1 id="pageTitle">Overview</h1><p id="pageSubtitle" class="muted">A clear view of clients, compliance work and documents.</p></div><div class="heading-actions"><span class="last-updated" id="lastUpdated">Not refreshed yet</span></div></div>
-      <div id="globalNotice" class="global-notice" role="status"></div>
-      <section class="view active" id="view-overview">
-        <div class="stat-grid">
-          <article class="stat-card"><div class="stat-top"><span>Total clients</span><span class="stat-icon"><i data-lucide="users"></i></span></div><strong id="statClients">—</strong><small>Client records in Firestore</small></article>
-          <article class="stat-card"><div class="stat-top"><span>Compliance tasks</span><span class="stat-icon"><i data-lucide="calendar-check"></i></span></div><strong id="statCompliance">—</strong><small>Synced compliance records</small></article>
-          <article class="stat-card"><div class="stat-top"><span>Pending tasks</span><span class="stat-icon warning"><i data-lucide="clock-3"></i></span></div><strong id="statPending">—</strong><small>Awaiting completion</small></article>
-          <article class="stat-card"><div class="stat-top"><span>Drive folders</span><span class="stat-icon"><i data-lucide="folder-check"></i></span></div><strong id="statFolders">—</strong><small>Records with a Drive folder</small></article>
-        </div>
-        <div class="content-grid">
-          <section class="panel"><div class="panel-head"><div><h2>Recent compliance</h2><p>Latest synced tasks</p></div><button class="link-button" data-goto="compliance">View all <i data-lucide="arrow-up-right"></i></button></div><div id="recentCompliance" class="table-wrap"><div class="empty-state">Loading compliance…</div></div></section>
-          <section class="panel"><div class="panel-head"><div><h2>Quick actions</h2><p>Common admin tasks</p></div></div><div class="quick-actions"><button class="quick-action" data-goto="clients"><span class="quick-icon"><i data-lucide="users"></i></span><span><strong>Browse clients</strong><small>Search client records</small></span><i data-lucide="chevron-right"></i></button><button class="quick-action" data-goto="compliance"><span class="quick-icon"><i data-lucide="calendar-check"></i></span><span><strong>Review compliance</strong><small>Check due dates and status</small></span><i data-lucide="chevron-right"></i></button><button class="quick-action" data-goto="documents"><span class="quick-icon"><i data-lucide="folder-open"></i></span><span><strong>Open Drive folders</strong><small>View existing Drive locations</small></span><i data-lucide="chevron-right"></i></button><button class="quick-action" data-goto="sync"><span class="quick-icon"><i data-lucide="refresh-cw"></i></span><span><strong>Check sync</strong><small>Review data freshness</small></span><i data-lucide="chevron-right"></i></button></div></section>
-        </div>
-      </section>
-      <section class="view" id="view-clients"><section class="panel"><div class="panel-head"><div><h2>Client directory</h2><p>Client data synchronized from Google Sheets</p></div><div class="table-tools"><label class="search-box"><i data-lucide="search"></i><input id="clientSearch" placeholder="Search name, ID, email…"></label><button class="icon-btn" id="exportClients" title="Export visible clients"><i data-lucide="download"></i></button></div></div><div id="clientsTable" class="table-wrap"><div class="empty-state">Loading clients…</div></div><div class="table-foot" id="clientsFoot"></div></section></section>
-      <section class="view" id="view-compliance"><section class="panel"><div class="panel-head"><div><h2>Compliance register</h2><p>Task status, period, due date and linked Drive folder</p></div><div class="table-tools"><label class="search-box"><i data-lucide="search"></i><input id="complianceSearch" placeholder="Search task, client, period…"></label><select id="complianceFilter" class="filter-select" aria-label="Filter by status"><option value="all">All statuses</option><option value="pending">Pending</option><option value="completed">Completed</option><option value="filed">Filed</option><option value="overdue">Overdue</option></select></div></div><div id="complianceTable" class="table-wrap"><div class="empty-state">Loading compliance…</div></div><div class="table-foot" id="complianceFoot"></div></section></section>
-      <section class="view" id="view-documents"><section class="panel"><div class="panel-head"><div><h2>Google Drive documents</h2><p>Links from existing client and task folders; files stay in Drive.</p></div><label class="search-box"><i data-lucide="search"></i><input id="documentSearch" placeholder="Search folder, client or task…"></label></div><div class="callout"><i data-lucide="shield-check"></i><p><strong>Private Drive access.</strong> These links open the existing Drive folder/file. Access still depends on Google Drive sharing permissions; Firestore access alone does not grant Drive access.</p></div><div id="documentsTable" class="table-wrap"><div class="empty-state">Loading Drive links…</div></div></section></section>
-      <section class="view" id="view-credentials"><section class="panel"><div class="panel-head"><div><h2>Portal credentials</h2><p>Administrative inventory only. Password values are never displayed.</p></div><label class="search-box"><i data-lucide="search"></i><input id="credentialSearch" placeholder="Search client, portal, username…"></label></div><div class="callout danger"><i data-lucide="lock-keyhole"></i><p><strong>Restricted data.</strong> This page masks passwords, but the current synced records may contain plaintext passwords in Firestore. Limit this collection to trusted admins and migrate secrets to a secure secret store when possible.</p></div><div id="credentialsTable" class="table-wrap"><div class="empty-state">Loading credentials…</div></div></section></section>
-      <section class="view" id="view-sync"><div class="content-grid sync-grid"><section class="panel"><div class="panel-head"><div><h2>Firestore connection</h2><p>Current browser session and collection status</p></div><span class="status-badge success"><span></span> Connected</span></div><div class="detail-list"><div><span>Firebase project</span><strong>cmb-40001</strong></div><div><span>Authentication</span><strong id="syncAuth">Checking…</strong></div><div><span>Admin authorization</span><strong id="syncAdmin">Checking…</strong></div><div><span>Last browser refresh</span><strong id="syncRefresh">—</strong></div><div><span>Clients loaded</span><strong id="syncClients">—</strong></div><div><span>Compliance loaded</span><strong id="syncCompliance">—</strong></div></div><button class="cta gradient" id="syncRefreshBtn"><i data-lucide="refresh-cw"></i> Refresh from Firestore</button></section><section class="panel"><div class="panel-head"><div><h2>Google Sheets sync</h2><p>Apps Script runs separately from this admin app</p></div></div><div class="sync-steps"><div class="sync-step"><span>1</span><div><strong>Google Sheets</strong><p>Source tabs: <code>clients</code>, <code>compliance</code>, <code>credentials</code>.</p></div></div><div class="sync-step"><span>2</span><div><strong>Apps Script</strong><p>Run initial sync once; then configure the time-driven trigger.</p></div></div><div class="sync-step"><span>3</span><div><strong>Firestore</strong><p>Documents use the ID column as the document ID. This app reads the resulting collections.</p></div></div></div><p class="muted small">The admin app does not create or run your Google Apps Script trigger. Verify the trigger in Apps Script → Triggers.</p></section></div></section>
-      <footer class="app-footer"><span>© <span id="year"></span> CM Filings</span><span>Count. Connect. Grow.</span></footer>
-    </main>
-  </div>
+    <header>
+        <h2>
+            GSTR-1 TOOL
+        </h2>
+        <nav>
+            <a href="#">Home</a>
+            <a href="#">About</a>
+            <a href="#">Contact</a>
+            <a href="#">Login</a>
+        </nav>
+    </header>
+    
+ 
 
-  <nav class="bottom-nav" aria-label="Primary navigation">
-    <button class="bottom-nav-item active" data-view="overview" aria-label="Home"><i data-lucide="house"></i><span>Home</span></button>
-    <button class="bottom-nav-item" data-view="clients" aria-label="Clients"><i data-lucide="users"></i><span>Clients</span><span class="bottom-count" id="bottomClientCount">0</span></button>
-    <button class="bottom-nav-item" data-view="credentials" aria-label="Credentials"><i data-lucide="key-round"></i><span>Credentials</span></button>
-    <button class="bottom-nav-item" data-view="compliance" aria-label="Compliance"><i data-lucide="calendar-check"></i><span>Compliance</span><span class="bottom-count" id="bottomComplianceCount">0</span></button>
-  </nav>
-</div>
-<div id="toast" class="toast" role="status" aria-live="polite"></div>
-<script type="module" src="js/app.js"></script>
-</body></html>
+    <h2 class="mainheading">GSTR-1 Excel to JSON Converter</h2>
+
+    <form id="gstr1deshbord">
+        <input type="text" name="" id="mygst" placeholder="Enter Your GSTIN">
+        <select name="" id="fyselect">
+            <option value="">Select FY</option>
+            <option value="042024">April-2024</option>
+            <option value="052024">May-2024</option>
+            <option value="062024">Jun-2024</option>
+            <option value="072024">July-2024</option>
+            <option value="082024">Aug-2024</option>
+            <option value="092024">Sep-2024</option>
+            <option value="102024">Oct-2024</option>
+            <option value="112024">Nov-2024</option>
+            <option value="122024">Dec-2024</option>
+            <option value="012025">Jan-2025</option>
+            <option value="022025">Feb-2025</option>
+            <option value="032025">Mar-2025</option>
+        </select>
+
+        <button type="submit">Next</button>
+    </form>
+
+
+    <form id="upload-form">
+        <label for="excelFile" class="file-upload-btn">Upload GSTR-1 Excel File:</label>
+        <input type="file" id="excelFile" accept=".xlsx, .xls" required />
+        <button type="submit">Convert to JSON</button>
+    </form>
+
+
+    <div id="result">
+        <!-- <h3>Download JSON</h3> -->
+        <a id="downloadLink" href="#" download="gstr1.json">
+            <button>Download JSON File</button>
+        </a>
+
+        <br>
+        <br>
+
+
+        <div>
+            <p><h2>GSTR-1 Import Sucessfully ! </h2> Please Check Your Summery. </p>
+            <table border="1" style="width: 100%; border-collapse: collapse; text-align: center;">
+                <thead>
+                    <tr class="trhead">
+                        <th>Column</th>
+                        <th>Taxable Value</th>
+                        <th>IGST</th>
+                        <th>CGST</th>
+                        <th>SGST</th>
+                    </tr>
+                </thead>
+                <tbody>
+                  
+                   
+                    <tr>
+                        <td>B2B Sale</td>
+                        <td id="b2btaxabletable">0</td>
+                        <td id="b2bigsttable">0</td>
+                        <td id="b2bcgsttable">0</td>
+                        <td id="b2bsgsttable">0</td>
+                    </tr>
+                    <tr>
+                        <td>B2C Sale</td>
+                        <td id="b2ctaxabletable"></td>
+                        <td id="b2cigsttable"></td>
+                        <td id="b2ccgsttable"></td>
+                        <td id="b2csgsttable"></td>
+                    </tr>
+                    <tr>
+                        <td>CDNR </td>
+                        <td id="cdnrtaxabletable"></td>
+                        <td id="cdnrigsttable"></td>
+                        <td id="cdnrcgsttable"></td>
+                        <td id="cdnrsgsttable"></td>
+                    </tr>
+                    
+                    <tr style="border: 2px black solid; font-weight: 700;"> 
+                        <td style="font-weight: 700;" >Final Total Of B2B+B2C-CDNR </td>
+                        <td style="font-weight: 700;" id="finaltaxable"></td>
+                        <td style="font-weight: 700;" id="finaligst"></td>
+                        <td style="font-weight: 700;" id="finalcgst"></td>
+                        <td style="font-weight: 700;" id="finalsgst"></td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <br><br>
+
+            <table border="1" style="width: 100%; border-collapse: collapse; text-align: center;">
+                <thead>
+                    <tr class="trhead">
+                        <th>HSN CODE</th>
+                        <!-- <th>Description</th> -->
+                        <!-- <th>UQC</th> -->
+                        <!-- <th>QTY</th> -->
+                        <th>Taxable Value</th>
+                        <th>RATE %</th>
+                        <th>IGST Value</th>
+                        <th>CGST Value</th>
+                        <th>SGST Value</th>
+                        <th>CESS Value</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <!-- <th>NA</th> -->
+                        <!-- <th>NA</th> -->
+                        <!-- <th>NA</th> -->
+                        <th id="hsncodeqty"></th>
+                        <th id="hsncodetaxable"></th>
+                        <th>NA</th>
+                        <th id="hsncodeigst"></th>
+                        <th id="hsncodecgst"></th>
+                        <th id="hsncodesgst"></th>
+                        <th id="hsncodecess"></th>
+                    </tr>
+                </tbody>
+
+            </table>
+            <br><br>
+            <hr>
+            <br><br>
+
+            <table border="1" style="width: 100%; border-collapse: collapse; text-align: center;"> 
+                <thead>
+                    <tr class="trhead">
+                        <th>Column</th>
+                        <th>Taxable Value</th>
+                        <th>IGST</th>
+                        <th>CGST</th>
+                        <th>SGST</th>
+                        <th>CESS</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    <tr>
+                        <th>Differance in HSN vs Sale</th>
+                        <th id="difftaxable"></th>
+                        <th id="diffigst"></th>
+                        <th id="diffcgst"></th>
+                        <th id="diffsgst"></th>
+                        <th id="diffcess"></th>
+                    </tr>
+                </tbody>
+
+            </table>
+        </div>
+
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.0/xlsx.full.min.js"></script>
+
+    <script>
+        document.getElementById('upload-form').style.display = 'none';
+         let mygst, fillingperiod, gstFirstTwo ;
+         let b2btaxable, b2bigst, b2bcgst, b2bsgst;
+         let b2ctaxable, b2cigst, b2ccgst, b2csgst;
+         let cdnrtaxable, cdnrigst, cdnrcgst, cdnrsgst;
+         let logTotalTaxableValue = 0, logtotaligst = 0, logtotalcgst=0, logtotalsgst=0;
+         let hsncode = 0, hsncodedec = 0, hsncodeuqc = 0, hsncodeqty = 0, hsncodetaxable = 0, hsncoderate=0, hsncodeigst=0, hsncodecgst=0, hsncodesgst=0, hsncodecess =0 ; 
+         let difftaxable = 0, diffigst = 0, diffcgst = 0, diffsgst = 0, diffcess = 0;
+
+
+        
+
+
+         document.getElementById('mygst').addEventListener('input', function(){
+             mygst  = document.getElementById("mygst").value
+             document.getElementById("mygst").value = mygst.toUpperCase() 
+         })
+
+        document.getElementById('gstr1deshbord').addEventListener('submit', function(e){
+            e.preventDefault()
+             mygst  = document.getElementById("mygst").value   // ||'24AJGPD8911J1ZA';  // GST number
+             fillingperiod =  document.getElementById("fyselect").value   // || '112024';     // Filing period (optional)
+
+             if (!mygst || !fillingperiod) {
+                alert("Please fill in GSTIN and Select Filing Period.");
+                return;
+            }
+
+            let gstPattern = /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[0-9A-Z]{1}Z[A-Z0-9]{1}$/;
+            if (!gstPattern.test(mygst)) {
+        alert("Invalid GSTIN format. Please enter a valid GSTIN.");
+             } else {
+        console.log("Valid GSTIN:", mygst);
+            document.getElementById('gstr1deshbord').style.display = 'none';  // Hide the first form
+            document.getElementById('upload-form').style.display = 'block';
+             }
+
+
+            gstFirstTwo = mygst.substring(0, 2);
+})          
+
+document.getElementById('excelFile').addEventListener('change', function (event) {
+    const fileInput = event.target;
+    const fileName = fileInput.files[0] ? fileInput.files[0].name : 'No file selected';
+     document.querySelector('.file-upload-btn').textContent = fileName
+});
+
+        document.getElementById('upload-form').addEventListener('submit', function (event) {
+            event.preventDefault();
+
+            const fileInput = document.getElementById('excelFile');
+            const file = fileInput.files[0];
+
+            if (!file) {
+                alert('Please upload an Excel file');
+                return;
+            }
+           
+            const reader = new FileReader();
+            reader.onload = function (e) {
+                const data = new Uint8Array(e.target.result);
+                const workbook = XLSX.read(data, { type: 'array' });
+
+                // Define the required sheets to process
+                const requiredSheets = ['b2b,sez,de', 'b2b', 'b2cs', 'cdnr', 'hsn', 'docs'];
+                let gstJson = {
+                    gstin: mygst || 'Enter Your Gst Number',
+                    fp: fillingperiod || 'Enter Filling Month'
+                };
+
+                // Loop through the required sheets and process them
+                requiredSheets.forEach(sheetName => {
+                    if (workbook.SheetNames.includes(sheetName)) {
+                        const sheet = workbook.Sheets[sheetName];
+                        const jsonData = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+
+                        switch (sheetName) {
+                            case 'b2b,sez,de':
+                            case  'b2b':
+                                const b2bData = processB2BData(jsonData);
+                                if (b2bData.length > 0) gstJson.b2b = b2bData;
+                                break;
+                            case 'b2cs':
+                                const b2csData = processB2CSData(jsonData);
+                                if (b2csData.length > 0) gstJson.b2cs = b2csData;
+                                break;
+                            case 'cdnr':
+                                const cdnrData = processCDNRData(jsonData);
+                                if (cdnrData.length > 0) gstJson.cdnr = cdnrData;
+                                break;
+                            case 'hsn':
+                                const hsnData = processHSNData(jsonData);
+                                if (hsnData.length > 0) gstJson.hsn = { data: hsnData };
+                                break;
+                            case 'docs':
+                                const docsData = processDocsData(jsonData);
+                                if (docsData.length > 0) gstJson.doc_issue = { doc_det: docsData };
+                                break;
+                        }
+                    }
+                });
+
+                // Add hash and version at the end
+                gstJson.hash = "hash";
+                gstJson.version = "GST1.00";
+
+                // Convert the object to JSON and create a downloadable file
+                const jsonBlob = new Blob([JSON.stringify(gstJson, null, 2)], { type: 'application/json' });
+                const jsonUrl = URL.createObjectURL(jsonBlob);
+                document.getElementById('downloadLink').href = jsonUrl;
+                document.getElementById('result').style.display = 'block';
+            };
+           
+            reader.readAsArrayBuffer(file);
+        });
+
+        // Check if the row is not blank
+        function isNotBlank(row) {
+            return row.some(cell => cell !== null && cell !== undefined && cell !== "");
+        }
+
+        // Date formatting function to convert to dd-mm-yyyy
+        function formatDate(date) {
+            const d = new Date(date);
+            const day = String(d.getDate()).padStart(2, '0');
+            const month = String(d.getMonth() + 1).padStart(2, '0');
+            const year = d.getFullYear();
+            return `${day}-${month}-${year}`;
+        }
+
+        // Function to trim any string value to remove leading and trailing spaces
+        function trimString(value) {
+            return typeof value === 'string' ? value.trim() : value;
+        }
+
+        // Processing B2B sheet with the updated logic
+        function processB2BData(excelData) {
+            const b2bData = [];
+            b2btaxable = 0;
+            b2bigst = 0 ;
+            b2bcgst = 0 ;
+            b2bsgst = 0;
+
+            excelData.forEach((row, index) => {
+                if (index > 3 && isNotBlank(row)) { // Skip first 4 rows and blank rows
+                    const posFirstTwo = trimString(row[5]).substring(0, 2); // Place of supply (first two characters)
+                    const inv_typfrist = trimString(row[8]).substring(0,1);
+
+                    let iamt = row[11] * row[10] / 100; // Default IGST value
+                    let camt = 0;  // Default CGST value
+                    let csamt = 0; // Default SGST value
+
+                    // If first two characters of pos and GST number match
+                    if (posFirstTwo === gstFirstTwo) {
+                        iamt = 0;
+                        camt = row[11] * row[10]/2 / 100;
+                        csamt = row[11] * row[10]/2 / 100;
+                    }
+                    b2btaxable += row[11]
+                    b2bigst += iamt
+                    b2bcgst += camt
+                    b2bsgst += csamt
+                  
+
+                    b2bData.push({
+                        "ctin": trimString(row[0]),  // GSTIN
+                        "inv": [{
+                            "inum": trimString(row[2]),  // Invoice number
+                            "idt": formatDate(row[3]),   // Invoice date (formatted)
+                            "val": row[4],   // Invoice value
+                            "pos": posFirstTwo,   // Place of supply (first two characters)
+                            "rchrg": trimString(row[6]), // Reverse charge
+                            "inv_typ": inv_typfrist, // Invoice type
+                            "itms": [{
+                                "num": 1,  // Item number
+                                "itm_det": {
+                                    "rt": row[10],  // Rate
+                                    "txval": row[11], // Taxable value
+                                    "iamt": iamt,  // IGST
+                                    "camt": camt, // CGST
+                                    "csamt": csamt, // SGST
+                                    "samt": row[12] // State tax
+                                }
+                            }]
+                        }]
+                    });
+                }
+            });
+
+            document.getElementById('b2btaxabletable').textContent = b2btaxable
+            document.getElementById('b2bigsttable').textContent = b2bigst
+            document.getElementById('b2bcgsttable').textContent = b2bcgst
+            document.getElementById('b2bsgsttable').textContent = b2bsgst
+
+            console.log("Total txval for all B2B rows: ", b2btaxable + " igst " + b2bigst + " cgst " + b2bcgst + " sgst " + b2bsgst);
+            
+            return b2bData;
+        }
+        
+        // Processing B2CS sheet
+        function processB2CSData(excelData) {
+            const b2csData = [];
+            b2ctaxable = 0;
+            b2cigst = 0;
+            b2ccgst = 0;
+            b2csgst = 0;
+
+            excelData.forEach((row, index) => {
+                if (index > 3 && isNotBlank(row)) { // Skip first 4 rows and blank rows
+                    
+                    const b2csplytyp = trimString(row[1]).substring(0,2);
+                    let iamt = row[4] * row[3] / 100; // Default IGST value
+                    let camt = 0;  // Default CGST value
+                    let csamt = 0; // Default SGST value
+                    let sply_ty = 'INTER';
+
+                    if(b2csplytyp === gstFirstTwo){
+                        iamt = 0;
+                        camt = row[4] * row[3]/2  / 100;
+                        csamt = row[4] * row[3]/2  / 100;
+                        sply_ty = 'INTRA';
+                    }
+
+                    b2ctaxable += row[4]
+                    b2cigst += iamt
+                    b2ccgst += camt
+                    b2csgst += csamt
+
+                    
+                    b2csData.push({
+                        "sply_ty": sply_ty,  // Supply type
+                        "txval": row[4],    // Taxable value
+                        "typ": row[0],      // Type 0
+                        "pos": b2csplytyp,     // Place of supply 1
+                        "rt": row[3],       // Rate 2
+                        "iamt": iamt,     // IGST
+                        "camt": camt,     // CGST
+                        "samt": csamt,     // SGST
+                        "csamt": row[5]     // State tax
+                    });
+                }
+            });
+
+            document.getElementById("b2ctaxabletable").textContent = b2ctaxable
+            document.getElementById("b2cigsttable").textContent = b2cigst
+            document.getElementById("b2ccgsttable").textContent = b2ccgst
+            document.getElementById("b2csgsttable").textContent = b2csgst
+
+            return b2csData;
+        }
+
+        // Processing CDNR sheet
+        function processCDNRData(excelData) {
+            const cdnrData = [];
+            cdnrtaxable = 0;
+            cdnrigst = 0;
+            cdnrcgst = 0;
+            cdnrsgst = 0;
+
+            excelData.forEach((row, index) => {
+                if (index > 3 && isNotBlank(row)) { // Skip first 4 rows and blank rows
+
+                    let cdnrpos = trimString(row[5]).substring(0, 2);
+                    let cdnrinv_typ = trimString(row[7]).substring(0, 1);
+                    let iamt = row[11] * row[10] / 100; // Default IGST value
+                    let camt = 0;  // Default CGST value
+                    let csamt = 0; // Default SGST value
+                    let sply_ty = 'INTER';
+
+                    if(cdnrpos === gstFirstTwo){
+                        iamt = 0;
+                        camt = row[11] * row[10]/2  / 100;
+                        csamt = row[11] * row[10]/2  / 100;
+                    }
+
+                    cdnrtaxable += row[11]
+                    cdnrigst  += iamt
+                    cdnrcgst  += camt
+                     cdnrsgst  += csamt
+
+                    cdnrData.push({
+                        "ctin": trimString(row[0]),  // GSTIN
+                        "nt": [{
+                            "ntty": trimString(row[4]),  // Note type 4
+                            "val": row[8],    // Value 8
+                            "itms": [{
+                                "num": 1,  // Item number 
+                                "itm_det": {
+                                    "rt": row[10],  // Rate 10
+                                    "txval": row[11], // Taxable value 11
+                                    "iamt": iamt,  // IGST
+                                    "camt": camt,  // CGST
+                                    "csamt": csamt, // SGST
+                                    "samt": row[12]   // State tax
+                                }
+                            }], 
+                            "nt_num": row[2],  // Note number 2
+                            "nt_dt": formatDate(row[3]),  // Note date  3
+                            "pos": cdnrpos,    // Place of supply 5
+                            "rchrg": trimString(row[6]),  // Reverse charge 6
+                            "inv_typ": cdnrinv_typ // Invoice type 7
+                        }]
+                    });
+                }
+            });
+
+            document.getElementById("cdnrtaxabletable").textContent = 0-cdnrtaxable               
+            document.getElementById("cdnrigsttable").textContent =   0 - cdnrigst                      
+            document.getElementById("cdnrcgsttable").textContent =   0 - cdnrcgst                      
+            document.getElementById("cdnrsgsttable").textContent =       0 - cdnrsgst        
+
+           
+            return cdnrData;
+        }
+
+        // Processing HSN sheet
+        function processHSNData(excelData) {
+            const hsnData = [];
+            excelData.forEach((row, index) => {
+                if (index > 3 && isNotBlank(row)) { // Skip first 4 rows and blank rows
+
+                    hsncodeqty += row[3]
+                    hsncodetaxable += row[6]
+                    hsncodeigst += row[7]
+                    hsncodecgst += row[8]
+                    hsncodesgst += row[9]
+                    hsncodecess += row[10]
+
+
+                    hsnData.push({
+                        "num": index-3,       // Item number
+                        "hsn_sc": trimString(row[0]),
+                        "desc": trimString(row[1]),  // HSN code
+                        "uqc": row[2].substring(0, 3),      // Unit of Quantity
+                        "qty": row[3],      // Quantity
+                        "txval": row[6],    // Taxable value
+                        "iamt": row[7],     // IGST
+                        "camt": row[8],     // CGST
+                        "samt": row[9],     // SGST
+                        "csamt": row[10],    // State tax
+                        "rt": row[5]        // Rate
+                    });
+                }
+            });
+
+            document.getElementById("hsncodeqty").textContent = hsncodeqty
+            document.getElementById("hsncodetaxable").textContent = hsncodetaxable
+            document.getElementById("hsncodeigst").textContent = hsncodeigst
+            document.getElementById("hsncodecgst").textContent = hsncodecgst
+            document.getElementById("hsncodesgst").textContent = hsncodesgst
+            document.getElementById("hsncodecess").textContent = hsncodecess
+
+            TotalTaxableValue()
+            return hsnData;
+        }
+
+        // Processing Docs sheet
+        function processDocsData(excelData) {
+            const docData = [];
+            
+  
+
+
+            excelData.forEach((row, index) => {
+                let natureofDocument = ""
+            if(trimString(row[0]) === "Invoices for outward supply"){
+                natureofDocument = 1
+            } else if( trimString(row[0]) === "Invoices for inward supply from unregistered person"){
+                natureofDocument = 2
+            } else if( trimString(row[0]) === "Revised Invoice"){
+                natureofDocument = 3
+            } else if( trimString(row[0]) === "Debit Note"){
+                natureofDocument = 4
+            } else if( trimString(row[0]) === "Credit Note"){
+                natureofDocument = 5
+            } else if( trimString(row[0]) === "Receipt Voucher"){
+                natureofDocument = 6
+            }
+
+                if (index > 3 && isNotBlank(row)) { // Skip first 4 rows and blank rows
+                    docData.push({
+                        "doc_num": natureofDocument,  // Document number 0
+                        "docs": [{
+                            "num": 1,       // Item number
+                            "from": trimString(row[1]),     // From 1
+                            "to": trimString(row[2]),       // To 2
+                            "totnum": row[3],   // Total number 3
+                            "cancel": row[4],   // Cancelled 4
+                            "net_issue": row[3]-row[4] // Net issue 4-3
+                        }]
+                    });
+                }
+            });
+            return docData;
+        }
+
+      
+      
+
+        function TotalTaxableValue() {
+            logTotalTaxableValue = b2btaxable + b2ctaxable - cdnrtaxable
+            logtotaligst = b2bigst + b2cigst - cdnrigst
+            logtotalcgst = b2bcgst + b2ccgst - cdnrcgst
+            logtotalsgst = b2bsgst + b2csgst - cdnrsgst
+
+            document.getElementById("finaltaxable").textContent = logTotalTaxableValue
+            document.getElementById("finaligst").textContent = logtotaligst
+            document.getElementById("finalcgst").textContent = logtotalcgst
+            document.getElementById("finalsgst").textContent = logtotalsgst
+
+            document.getElementById("difftaxable").textContent = logTotalTaxableValue - hsncodetaxable
+            document.getElementById("diffigst").textContent = logtotaligst - hsncodeigst
+            document.getElementById("diffcgst").textContent = logtotalcgst - hsncodecgst
+            document.getElementById("diffsgst").textContent = logtotalsgst - hsncodesgst
+            document.getElementById("diffcess").textContent = 0
+
+
+
+    console.log("Total Taxable Value (B2B + B2C + CDNR):", logTotalTaxableValue + " " + logtotaligst + " " + logtotalcgst + " " + logtotalsgst);
+}
+
+
+    </script>
+
+</body>
+</html>
